@@ -1,0 +1,45 @@
+# DataLakeBucketAccessPolicy — custom policy enforcing two compliance rules:
+#   1. Access is scoped to data-lake-* buckets only (not all S3).
+#   2. Uploads without AES256 server-side encryption are explicitly DENIED.
+#      DENY statements override Allow in any other policy — this is the
+#      enforcement mechanism for "all customer data must be encrypted".
+resource "aws_iam_policy" "data_lake_bucket_access" {
+  name        = "DataLakeBucketAccessPolicy"
+  description = "Custom policy to access data lake S3 buckets with encryption enforcement. Allows read/write to data-lake-* buckets only. Blocks unencrypted uploads for compliance (GDPR/HIPAA)."
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ListDataLakeBucket"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = "arn:aws:s3:::data-lake-*"
+      },
+      {
+        Sid    = "ReadWriteDataLakeObjects"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "arn:aws:s3:::data-lake-*/*"
+      },
+      {
+        Sid    = "DenyUnencryptedUploads"
+        Effect = "Deny"
+        Action = "s3:PutObject"
+        Resource = "arn:aws:s3:::data-lake-*/*"
+        Condition = {
+          StringNotEquals = {
+            "s3:x-amz-server-side-encryption" = "AES256"
+          }
+        }
+      }
+    ]
+  })
+}
