@@ -32,12 +32,10 @@ resource "aws_iam_role_policy_attachment" "analyst_redshift_readonly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonRedshiftReadOnlyAccess"
 }
 
-# QuickSight read-only: allows analysts to view dashboards without
-# modifying data sources or creating infrastructure.
-resource "aws_iam_role_policy_attachment" "analyst_quicksight" {
-  role       = aws_iam_role.analyst_readonly.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonQuickSightReadOnlyAccess"
-}
+# QuickSight access is managed inside QuickSight itself (via its own user
+# management UI), not through IAM managed policies. AWS does not publish
+# an AmazonQuickSightReadOnlyAccess managed policy, so this is handled
+# separately in the QuickSight console after provisioning.
 
 resource "aws_iam_role_policy_attachment" "analyst_s3_readonly" {
   role       = aws_iam_role.analyst_readonly.name
